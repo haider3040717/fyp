@@ -2,11 +2,13 @@ package com.example.myapplication.data.remote
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object SessionManager {
     private const val PREFS_NAME = "auth_prefs"
@@ -57,6 +59,9 @@ private val loggingInterceptor = HttpLoggingInterceptor().apply {
 private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
     .addInterceptor(authInterceptor)
     .addInterceptor(loggingInterceptor)
+    .connectTimeout(30, TimeUnit.SECONDS)
+    .readTimeout(30, TimeUnit.SECONDS)
+    .writeTimeout(30, TimeUnit.SECONDS)
     .build()
 
 private val retrofit: Retrofit = Retrofit.Builder()

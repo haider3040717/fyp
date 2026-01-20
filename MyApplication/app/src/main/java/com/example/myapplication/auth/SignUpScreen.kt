@@ -269,7 +269,8 @@ fun SignUpScreen(
                                     university_email = email
                                 )
                             )
-                            SessionManager.authToken = response.token
+                            SessionManager.accessToken = response.access
+                            SessionManager.refreshToken = response.refresh
                             SessionManager.currentUserId = response.user.id
                             isLoading = false
                             onNavigateToHome()

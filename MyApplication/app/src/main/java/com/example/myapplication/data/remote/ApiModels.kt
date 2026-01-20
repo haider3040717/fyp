@@ -1,9 +1,31 @@
 package com.example.myapplication.data.remote
 
+import android.os.Build
+
 // Backend base URL:
 // - Emulator: use http://10.0.2.2:8000/
 // - Physical device: use your PC's LAN IP (make sure phone and PC are on same WiFi)
-const val BASE_URL = "http://192.168.1.117:8000/"
+// This function detects if running on emulator and uses appropriate URL
+fun getBaseUrl(): String {
+    val isEmulator = Build.FINGERPRINT.startsWith("generic")
+            || Build.FINGERPRINT.startsWith("unknown")
+            || Build.MODEL.contains("google_sdk")
+            || Build.MODEL.contains("Emulator")
+            || Build.MODEL.contains("Android SDK built for x86")
+            || Build.MANUFACTURER.contains("Genymotion")
+            || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+            || "google_sdk" == Build.PRODUCT
+    
+    return if (isEmulator) {
+        "http://10.0.2.2:8000/"
+    } else {
+        // For physical device, use your PC's LAN IP (same network as device)
+        // Backend must be running on 0.0.0.0:8000 (not 127.0.0.1:8000) to accept connections
+        "http://192.168.1.102:8000/"
+    }
+}
+
+val BASE_URL = getBaseUrl()
 
 // --- Auth ---
 

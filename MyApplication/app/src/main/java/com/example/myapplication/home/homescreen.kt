@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.ModalBottomSheet
 
@@ -634,9 +635,14 @@ fun PostItem(
     var isLiked by remember { mutableStateOf(post.isLiked) }
     var isBookmarked by remember { mutableStateOf(post.isBookmarked) }
     var likeCount by remember { mutableIntStateOf(post.likes) }
+    var commentCount by remember { mutableIntStateOf(post.comments) }
     var showMenu by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
     var shareUrl by remember { mutableStateOf<String?>(null) }
+    var showCommentInput by remember { mutableStateOf(false) }
+    var commentText by remember { mutableStateOf("") }
+    var isSubmittingComment by remember { mutableStateOf(false) }
+    var commentError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -789,7 +795,7 @@ fun PostItem(
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "${post.comments} comments",
+                    text = "$commentCount comments",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
@@ -852,7 +858,7 @@ fun PostItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .weight(1f)
-                        .clickable(onClick = { /* Handle comment */ })
+                        .clickable(onClick = { showCommentInput = !showCommentInput })
                         .padding(8.dp)
                 ) {
                     Icon(
@@ -903,6 +909,115 @@ fun PostItem(
                         )
                 )
             }
+
+            // Comment Input Section (shown when comment button is clicked)
+            if (showCommentInput) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Divider(color = Color.Gray.copy(alpha = 0.2f), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    // Error message
+                    if (commentError != null) {
+                        Text(
+                            text = commentError ?: "",
+                            color = Color.Red,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Comment Input Field
+                        OutlinedTextField(
+                            value = commentText,
+                            onValueChange = { 
+                                commentText = it
+                                commentError = null // Clear error when user types
+                            },
+                            placeholder = { Text("Write a comment...", fontSize = 14.sp) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = false,
+                            maxLines = 3,
+                            enabled = !isSubmittingComment,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF007AFF),
+                                unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f)
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+
+                        // Send Button
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (commentText.isNotBlank() && !isSubmittingComment)
+                                        Color(0xFF007AFF)
+                                    else
+                                        Color.Gray.copy(alpha = 0.3f)
+                                )
+                                .clickable(
+                                    enabled = commentText.isNotBlank() && !isSubmittingComment,
+                                    onClick = {
+                                        if (commentText.isNotBlank() && !isSubmittingComment) {
+                                            commentError = null
+                                            isSubmittingComment = true
+                                            scope.launch {
+                                                try {
+                                                    val created = apiService.createComment(
+                                                        mapOf(
+                                                            "post" to post.id,
+                                                            "content" to commentText.trim()
+                                                        )
+                                                    )
+                                                    // Success - clear input and update comment count
+                                                    commentText = ""
+                                                    commentCount += 1
+                                                    showCommentInput = false
+                                                    commentError = null
+                                                    // Refresh the feed to show the new comment count
+                                                    onRefresh()
+                                                } catch (e: Exception) {
+                                                    // Error - keep the input visible so user can retry
+                                                    commentError = "Failed to post comment: ${e.message ?: "Unknown error"}"
+                                                    android.util.Log.e("PostItem", "Error creating comment", e)
+                                                } finally {
+                                                    isSubmittingComment = false
+                                                }
+                                            }
+                                        }
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                        if (isSubmittingComment) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Send Comment",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         }
     }
 }
