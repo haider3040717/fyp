@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Profile
+from .models import *
 
 
 @admin.register(User)
@@ -11,3 +11,6 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "course")
+
+
+admin.site.register(Follow)

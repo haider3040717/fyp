@@ -119,15 +119,15 @@ class FollowView(APIView):
                 following=target_user
             )[1]
             # Create notification if follow was just created
-            # if created:
-            #     from notifications.models import Notification
-            #     Notification.objects.create(
-            #         user=target_user,
-            #         actor=request.user,
-            #         type="follow",
-            #         text=f"{request.user.full_name} started following you",
-            #         related_object_id=request.user.id
-            #     )
+            if created:
+                from notifications.models import Notification
+                Notification.objects.create(
+                    user=target_user,
+                    actor=request.user,
+                    type="follow",
+                    text=f"{request.user.full_name} started following you",
+                    related_object_id=request.user.id
+                )
             return Response({"status": "following"})
         except User.DoesNotExist:
             return Response(
@@ -306,3 +306,10 @@ class ChangePasswordView(APIView):
         request.user.set_password(new_password)
         request.user.save()
         return Response({"status": "ok"})
+
+
+
+
+
+
+# API_KEY = "AIzaSyAa1eIl12sdSjsNJ8-ppsljZoMLnYSeFg8"

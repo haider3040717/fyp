@@ -52,15 +52,15 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
         created = PostLike.objects.get_or_create(user=request.user, post=post)[1]
         # Create notification if like was just created and not by post author
-        # if created and post.author != request.user:
-        #     from notifications.models import Notification
-        #     Notification.objects.create(
-        #         user=post.author,
-        #         actor=request.user,
-        #         type="like",
-        #         text=f"{request.user.full_name} liked your post",
-        #         related_object_id=post.id
-        #     )
+        if created and post.author != request.user:
+            from notifications.models import Notification
+            Notification.objects.create(
+                user=post.author,
+                actor=request.user,
+                type="like",
+                text=f"{request.user.full_name} liked your post",
+                related_object_id=post.id
+            )
         return Response({"status": "liked"})
 
     @action(detail=True, methods=["post"])
@@ -127,15 +127,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = serializer.save(author=self.request.user, post_id=post_id)
         # Create notification if comment is not by post author
         post = comment.post
-        # if post.author != self.request.user:
-        #     from notifications.models import Notification
-        #     Notification.objects.create(
-        #         user=post.author,
-        #         actor=self.request.user,
-        #         type="comment",
-        #         text=f"{self.request.user.full_name} commented on your post",
-        #         related_object_id=post.id
-        #     )
+        if post.author != self.request.user:
+            from notifications.models import Notification
+            Notification.objects.create(
+                user=post.author,
+                actor=self.request.user,
+                type="comment",
+                text=f"{self.request.user.full_name} commented on your post",
+                related_object_id=post.id
+            )
 
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):

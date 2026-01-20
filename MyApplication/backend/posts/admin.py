@@ -30,3 +30,7 @@ class StoryLikeAdmin(admin.ModelAdmin):
 class StoryReplyAdmin(admin.ModelAdmin):
     list_display = ("id", "story", "author", "content", "created_at")
     search_fields = ("content", "author__full_name")
+
+
+admin.site.register(PostLike)
+admin.site.register(CommentLike)
