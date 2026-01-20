@@ -80,7 +80,6 @@ fun HomeScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToPostDetail: (String) -> Unit = {}
 ) {
-    var selectedBottomTab by remember { mutableIntStateOf(0) }
 
     var stories by remember { mutableStateOf<List<Story>>(emptyList()) }
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
@@ -159,16 +158,6 @@ fun HomeScreen(
                 onSearchClick = onNavigateToSearch,
                 onNotificationsClick = onNavigateToNotifications,
                 onMessagesClick = onNavigateToMessages
-            )
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                selectedTab = selectedBottomTab,
-                onTabSelected = { selectedBottomTab = it },
-                onProfileClick = onNavigateToProfile,
-                onEventMapClick = onNavigateToEventMap,
-                onCreatePostClick = onNavigateToCreatePost,
-                onFriendsClick = onNavigateToFriends
             )
         }
     ) { paddingValues ->
@@ -974,12 +963,11 @@ fun PostItem(
                                             isSubmittingComment = true
                                             scope.launch {
                                                 try {
-                                                    val created = apiService.createComment(
-                                                        mapOf(
-                                                            "post" to post.id,
-                                                            "content" to commentText.trim()
-                                                        )
-                                                    )
+                                                val commentData: Map<String, Any> = mapOf(
+                                                    "post" to post.id,
+                                                    "content" to commentText.trim()
+                                                )
+                                                val created = apiService.createComment(commentData)
                                                     // Success - clear input and update comment count
                                                     commentText = ""
                                                     commentCount += 1

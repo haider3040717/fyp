@@ -63,7 +63,7 @@ fun CreatePostScreen(
                         errorMessage = null
                         scope.launch {
                             try {
-                                val postData = mutableMapOf<String, Any>("content" to postText)
+                                val postData: MutableMap<String, Any> = mutableMapOf("content" to postText)
                                 selectedImageUrl?.takeIf { it.isNotBlank() }?.let { postData["image_url"] = it }
                                 apiService.createPost(postData)
                                 isPosting = false

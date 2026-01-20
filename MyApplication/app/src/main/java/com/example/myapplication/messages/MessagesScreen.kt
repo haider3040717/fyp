@@ -92,9 +92,6 @@ fun MessagesScreen(
                 onNotificationsClick = { /* TODO: Notifications */ },
                 onMessagesClick = { /* Already on messages */ }
             )
-        },
-        bottomBar = {
-            MessagesBottomNavigationBar(selectedTab = 0)
         }
     ) { paddingValues ->
         Column(

@@ -106,11 +106,6 @@ fun FriendsScreen(
                 onNotificationsClick = { /* TODO: Add notifications */ },
                 onMessagesClick = { /* TODO: Add messages */ }
             )
-        },
-        bottomBar = {
-            FriendsBottomNavigationBar(
-                selectedTab = 1 // Friends tab selected
-            )
         }
     ) { paddingValues ->
         Column(

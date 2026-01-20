@@ -306,10 +306,3 @@ class ChangePasswordView(APIView):
         request.user.set_password(new_password)
         request.user.save()
         return Response({"status": "ok"})
-
-
-
-
-
-
-# API_KEY = "AIzaSyAa1eIl12sdSjsNJ8-ppsljZoMLnYSeFg8"

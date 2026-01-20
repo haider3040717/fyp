@@ -4,16 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.auth.SignInScreen
 import com.example.myapplication.auth.SignUpScreen
 import com.example.myapplication.home.HomeScreen
+import com.example.myapplication.home.BottomNavigationBar
 import com.example.myapplication.profile.ProfileScreen
 import com.example.myapplication.profile.EditProfileScreen
 import com.example.myapplication.search.SearchScreen
@@ -49,11 +57,63 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CampusConnectApp() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    var selectedBottomTab by remember { mutableIntStateOf(0) }
 
-    NavHost(
-        navController = navController,
-        startDestination = "signin"
-    ) {
+    // Determine if current screen should show bottom navigation
+    val showBottomNav = currentRoute in listOf("home", "profile", "search", "eventmap", "friends")
+
+    Scaffold(
+        bottomBar = {
+            if (showBottomNav) {
+                BottomNavigationBar(
+                    selectedTab = selectedBottomTab,
+                    onTabSelected = { index ->
+                        selectedBottomTab = index
+                        when (index) {
+                            0 -> navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                            1 -> navController.navigate("friends") {
+                                popUpTo("friends") { inclusive = true }
+                            }
+                            2 -> navController.navigate("createpost")
+                            3 -> navController.navigate("eventmap") {
+                                popUpTo("eventmap") { inclusive = true }
+                            }
+                            4 -> navController.navigate("profile") {
+                                popUpTo("profile") { inclusive = true }
+                            }
+                        }
+                    },
+                    onProfileClick = {
+                        navController.navigate("profile") {
+                            popUpTo("profile") { inclusive = true }
+                        }
+                    },
+                    onEventMapClick = {
+                        navController.navigate("eventmap") {
+                            popUpTo("eventmap") { inclusive = true }
+                        }
+                    },
+                    onCreatePostClick = {
+                        navController.navigate("createpost")
+                    },
+                    onFriendsClick = {
+                        navController.navigate("friends") {
+                            popUpTo("friends") { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = "signin",
+            modifier = Modifier.padding(paddingValues)
+        ) {
         composable("signin") {
             SignInScreen(
                 onNavigateToSignUp = {
@@ -109,6 +169,24 @@ fun CampusConnectApp() {
             )
         }
 
+        composable("profile/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            ProfileScreen(
+                userId = userId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
+                },
+                onNavigateToEditProfile = {
+                    navController.navigate("editprofile")
+                },
+                onNavigateToPostDetail = { postId ->
+                    navController.navigate("postdetail/$postId")
+                }
+            )
+        }
         composable("profile") {
             ProfileScreen(
                 onNavigateBack = {
@@ -170,7 +248,7 @@ fun CampusConnectApp() {
                     navController.popBackStack()
                 },
                 onNavigateToProfile = { userId ->
-                    // TODO: Navigate to user profile with userId
+                    navController.navigate("profile/$userId")
                 }
             )
         }
@@ -257,5 +335,6 @@ fun CampusConnectApp() {
                 },
             )
         }
+    }
     }
 }

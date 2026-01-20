@@ -120,9 +120,6 @@ fun NotificationsScreen(
             NotificationsTopAppBar(
                 onNotificationsClick = { /* Already on notifications */ }
             )
-        },
-        bottomBar = {
-            NotificationsBottomNavigationBar(selectedTab = 3)
         }
     ) { paddingValues ->
         Column(

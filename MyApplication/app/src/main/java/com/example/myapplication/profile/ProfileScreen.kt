@@ -29,6 +29,8 @@ import com.example.myapplication.home.PostItem
 import com.example.myapplication.home.Post
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,10 +97,14 @@ fun ProfileScreen(
                             id = dto.id,
                             userName = dto.author.full_name,
                             profileImage = dto.author.profile?.avatar_url ?: "",
-                            timeAgo = dateFormatter.format(
-                                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ", Locale.getDefault())
-                                    .parse(dto.created_at) ?: Date()
-                            ),
+                            timeAgo = try {
+                                val instant = Instant.parse(dto.created_at)
+                                val date = Date.from(instant)
+                                dateFormatter.format(date)
+                            } catch (e: Exception) {
+                                // Fallback to original date if parsing fails
+                                dateFormatter.format(Date())
+                            },
                             content = dto.content,
                             postImage = dto.image_url,
                             likes = dto.like_count,
