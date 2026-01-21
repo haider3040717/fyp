@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.UserDto
+import com.example.myapplication.data.remote.StartConversationRequest
 import com.example.myapplication.data.remote.apiService
 import kotlinx.coroutines.launch
 
@@ -38,6 +39,8 @@ data class FriendRequest(
 fun FriendsScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToProfile: (String) -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
+    onNavigateToChat: (String, String, Boolean) -> Unit = { _, _, _ -> },
     onFriendAdded: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -104,7 +107,7 @@ fun FriendsScreen(
     Scaffold(
         topBar = {
             FriendsTopAppBar(
-                onSearchClick = { /* TODO: Add search */ },
+                onSearchClick = onNavigateToSearch,
                 onNotificationsClick = { /* TODO: Add notifications */ },
                 onMessagesClick = { /* TODO: Add messages */ }
             )
@@ -212,7 +215,22 @@ fun FriendsScreen(
                             onReject = { requestId ->
                                 friendRequests = friendRequests.filter { it.id != requestId }
                             },
-                            onProfileClick = onNavigateToProfile
+                            onProfileClick = onNavigateToProfile,
+                            onMessageClick = { userId ->
+                                scope.launch {
+                                    try {
+                                        // Start a conversation with this user
+                                        val response = apiService.startConversation(StartConversationRequest(user_id = userId.toInt()))
+                                        val conversationId = response["conversation_id"] ?: 0
+                                        // Navigate to chat
+                                        onNavigateToChat(conversationId.toString(), "", false)
+                                    } catch (e: Exception) {
+                                        errorMessage = "Failed to start conversation: ${e.message ?: "Unknown error"}"
+                                        kotlinx.coroutines.delay(3000)
+                                        errorMessage = null
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -220,7 +238,22 @@ fun FriendsScreen(
                     requests = invites,
                     onAccept = { /* Invites not implemented in backend yet */ },
                     onReject = { /* Invites not implemented in backend yet */ },
-                    onProfileClick = onNavigateToProfile
+                    onProfileClick = onNavigateToProfile,
+                    onMessageClick = { userId ->
+                        scope.launch {
+                            try {
+                                // Start a conversation with this user
+                                val response = apiService.startConversation(StartConversationRequest(user_id = userId.toInt()))
+                                val conversationId = response["conversation_id"] ?: 0
+                                // Navigate to chat
+                                onNavigateToChat(conversationId.toString(), "", false)
+                            } catch (e: Exception) {
+                                errorMessage = "Failed to start conversation: ${e.message ?: "Unknown error"}"
+                                kotlinx.coroutines.delay(3000)
+                                errorMessage = null
+                            }
+                        }
+                    }
                 )
                 2 -> {
                     if (isLoading) {
@@ -263,7 +296,22 @@ fun FriendsScreen(
                                     else suggestion
                                 }
                             },
-                            onProfileClick = onNavigateToProfile
+                            onProfileClick = onNavigateToProfile,
+                            onMessageClick = { userId ->
+                                scope.launch {
+                                    try {
+                                        // Start a conversation with this user
+                                        val response = apiService.startConversation(StartConversationRequest(user_id = userId.toInt()))
+                                        val conversationId = response["conversation_id"] ?: 0
+                                        // Navigate to chat
+                                        onNavigateToChat(conversationId.toString(), "", false)
+                                    } catch (e: Exception) {
+                                        errorMessage = "Failed to start conversation: ${e.message ?: "Unknown error"}"
+                                        kotlinx.coroutines.delay(3000)
+                                        errorMessage = null
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -348,7 +396,8 @@ fun FriendRequestsList(
     requests: List<FriendRequest>,
     onAccept: (String) -> Unit,
     onReject: (String) -> Unit,
-    onProfileClick: (String) -> Unit
+    onProfileClick: (String) -> Unit,
+    onMessageClick: (String) -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier
@@ -365,7 +414,8 @@ fun FriendRequestsList(
                 request = request,
                 onAccept = { onAccept(request.id) },
                 onReject = { onReject(request.id) },
-                onProfileClick = { onProfileClick(request.id) }
+                onProfileClick = { onProfileClick(request.id) },
+                onMessageClick = { onMessageClick(request.id) }
             )
         }
     }
@@ -376,7 +426,8 @@ fun FriendRequestCard(
     request: FriendRequest,
     onAccept: () -> Unit,
     onReject: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onMessageClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -431,12 +482,28 @@ fun FriendRequestCard(
             }
 
             // Action Buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                // Accept Button (Checkmark)
-                if (!request.isAccepted) {
+            if (request.isAccepted && !request.isRejected) {
+                // For accepted friends, show Message button
+                IconButton(
+                    onClick = onMessageClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF007AFF))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Send,
+                        contentDescription = "Message",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            } else if (!request.isRejected) {
+                // For pending requests, show Accept/Reject
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Accept Button (Checkmark)
                     IconButton(
                         onClick = onAccept,
                         modifier = Modifier
@@ -451,38 +518,22 @@ fun FriendRequestCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                } else {
-                    // Show accepted state
-                    Box(
+
+                    // Reject Button (X)
+                    IconButton(
+                        onClick = onReject,
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF4CAF50)),
-                        contentAlignment = Alignment.Center
+                            .background(Color(0xFFE0E0E0))
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Accepted",
-                            tint = Color.White,
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Reject",
+                            tint = Color.Gray,
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                }
-
-                // Reject Button (X)
-                IconButton(
-                    onClick = onReject,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE0E0E0))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Reject",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
         }

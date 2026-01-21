@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.UserDto
 import com.example.myapplication.data.remote.PostDto
+import com.example.myapplication.data.remote.StartConversationRequest
 import com.example.myapplication.data.remote.apiService
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -27,7 +28,10 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToProfile: (String) -> Unit = {},
+    onNavigateToPostDetail: (String) -> Unit = {},
+    onNavigateToChat: (String, String, Boolean) -> Unit = { _, _, _ -> }
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
@@ -35,6 +39,7 @@ fun SearchScreen(
     var searchPosts by remember { mutableStateOf<List<SearchPost>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun performSearch(query: String) {
@@ -144,6 +149,38 @@ fun SearchScreen(
                 )
             }
 
+            // Success message
+            if (successMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                ) {
+                    Text(
+                        text = successMessage ?: "",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            // Error message
+            if (errorMessage != null && !errorMessage!!.contains("Search failed")) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f))
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             // Search Results
             when {
                 isLoading -> {
@@ -197,14 +234,37 @@ fun SearchScreen(
                                     UserSearchItem(
                                         user = user,
                                         onUserClick = {
-                                            // Navigate to user profile
+                                            onNavigateToProfile(user.id)
                                         },
                                         onAddFriend = {
                                             scope.launch {
                                                 try {
                                                     apiService.followUser(user.id.toInt())
+                                                    successMessage = "Friend request sent successfully!"
+                                                    // Clear success message after 3 seconds
+                                                    kotlinx.coroutines.delay(3000)
+                                                    successMessage = null
                                                 } catch (e: Exception) {
-                                                    // Handle error
+                                                    errorMessage = "Failed to send friend request: ${e.message ?: "Unknown error"}"
+                                                    // Clear error message after 3 seconds
+                                                    kotlinx.coroutines.delay(3000)
+                                                    errorMessage = null
+                                                }
+                                            }
+                                        },
+                                        onMessageClick = {
+                                            scope.launch {
+                                                try {
+                                                    // Start a conversation with this user
+                                                    val response = apiService.startConversation(StartConversationRequest(user_id = user.id.toInt()))
+                                                    val conversationId = response["conversation_id"] ?: 0
+                                                    // Navigate to chat
+                                                    onNavigateToChat(conversationId.toString(), user.name, false)
+                                                } catch (e: Exception) {
+                                                    errorMessage = "Failed to start conversation: ${e.message ?: "Unknown error"}"
+                                                    // Clear error message after 3 seconds
+                                                    kotlinx.coroutines.delay(3000)
+                                                    errorMessage = null
                                                 }
                                             }
                                         }
@@ -226,7 +286,7 @@ fun SearchScreen(
                                     PostSearchItem(
                                         post = post,
                                         onPostClick = {
-                                            // Navigate to post detail
+                                            onNavigateToPostDetail(post.id)
                                         }
                                     )
                                 }
@@ -243,7 +303,8 @@ fun SearchScreen(
 fun UserSearchItem(
     user: SearchUser,
     onUserClick: () -> Unit,
-    onAddFriend: () -> Unit
+    onAddFriend: () -> Unit,
+    onMessageClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -293,17 +354,34 @@ fun UserSearchItem(
                 )
             }
 
-            OutlinedButton(
-                onClick = onAddFriend,
-                modifier = Modifier.height(36.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    Icons.Default.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Add", fontSize = 12.sp)
+                OutlinedButton(
+                    onClick = onAddFriend,
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.PersonAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add", fontSize = 12.sp)
+                }
+
+                OutlinedButton(
+                    onClick = onMessageClick,
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Send,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Message", fontSize = 12.sp)
+                }
             }
         }
     }

@@ -99,7 +99,7 @@ interface ApiService {
     @POST("api/messages/conversations/{id}/messages/")
     suspend fun sendMessage(
         @Path("id") conversationId: Int,
-        @Body body: Map<String, String>
+        @Body body: MessageRequest
     ): MessageDto
 
     // --- Notifications ---
@@ -119,7 +119,7 @@ interface ApiService {
     suspend fun getEvents(): List<EventDto>
 
     @POST("api/events/events/")
-    suspend fun createEvent(@Body body: Map<String, Any>): EventDto
+    suspend fun createEvent(@Body body: EventRequest): EventDto
 
     @POST("api/events/events/{id}/interested/")
     suspend fun markEventInterested(@Path("id") id: Int): Map<String, String>

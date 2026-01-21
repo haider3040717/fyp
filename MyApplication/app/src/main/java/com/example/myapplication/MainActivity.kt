@@ -28,6 +28,8 @@ import com.example.myapplication.search.SearchScreen
 import com.example.myapplication.eventmap.EventMapScreen
 import com.example.myapplication.createpost.CreatePostScreen
 import com.example.myapplication.friends.FriendsScreen
+import com.example.myapplication.friends.FriendsListScreen
+import com.example.myapplication.events.CreateEventScreen
 import com.example.myapplication.messages.MessagesScreen
 import com.example.myapplication.messages.ChatDetailScreen
 import com.example.myapplication.notifications.NotificationsScreen
@@ -61,6 +63,7 @@ fun CampusConnectApp() {
     val currentRoute = navBackStackEntry?.destination?.route
     var selectedBottomTab by remember { mutableIntStateOf(0) }
     var profileRefreshTrigger by remember { mutableIntStateOf(0) }
+    var messagesRefreshTrigger by remember { mutableIntStateOf(0) }
 
     // Determine if current screen should show bottom navigation
     val showBottomNav = currentRoute in listOf("home", "profile", "search", "eventmap", "friends")
@@ -166,6 +169,10 @@ fun CampusConnectApp() {
                 },
                 onNavigateToPostDetail = { postId ->
                     navController.navigate("postdetail/$postId")
+                },
+                onNavigateToCreateStory = {
+                    // For now, navigate to create post - in future could have dedicated story creation
+                    navController.navigate("createpost")
                 }
             )
         }
@@ -186,6 +193,9 @@ fun CampusConnectApp() {
                 onNavigateToPostDetail = { postId ->
                     navController.navigate("postdetail/$postId")
                 },
+                onNavigateToFriends = {
+                    navController.navigate("friendslist")
+                },
                 externalRefreshTrigger = profileRefreshTrigger
             )
         }
@@ -202,6 +212,9 @@ fun CampusConnectApp() {
                 },
                 onNavigateToPostDetail = { postId ->
                     navController.navigate("postdetail/$postId")
+                },
+                onNavigateToFriends = {
+                    navController.navigate("friendslist")
                 },
                 externalRefreshTrigger = profileRefreshTrigger
             )
@@ -222,6 +235,15 @@ fun CampusConnectApp() {
             SearchScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToProfile = { userId ->
+                    navController.navigate("profile/$userId")
+                },
+                onNavigateToPostDetail = { postId ->
+                    navController.navigate("postdetail/$postId")
+                },
+                onNavigateToChat = { chatId, chatName, isOnline ->
+                    navController.navigate("chatdetail/$chatId/$chatName/$isOnline")
                 }
             )
         }
@@ -241,6 +263,9 @@ fun CampusConnectApp() {
                 },
                 onPostCreated = {
                     navController.popBackStack()
+                },
+                onNavigateToCreateEvent = {
+                    navController.navigate("createevent")
                 }
             )
         }
@@ -252,6 +277,12 @@ fun CampusConnectApp() {
                 },
                 onNavigateToProfile = { userId ->
                     navController.navigate("profile/$userId")
+                },
+                onNavigateToSearch = {
+                    navController.navigate("search")
+                },
+                onNavigateToChat = { chatId, chatName, isOnline ->
+                    navController.navigate("chatdetail/$chatId/$chatName/$isOnline")
                 },
                 onFriendAdded = {
                     // Trigger profile refresh when friend is added
@@ -265,7 +296,32 @@ fun CampusConnectApp() {
             )
         }
 
+        composable("friendslist") {
+            FriendsListScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onFriendClick = { userId ->
+                    navController.navigate("profile/$userId")
+                }
+            )
+        }
+
+        composable("createevent") {
+            CreateEventScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onEventCreated = {
+                    // Navigate back to home or events screen
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable("messages") {
+            // Increment refresh trigger to reload conversations
+            messagesRefreshTrigger++
             MessagesScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -275,7 +331,8 @@ fun CampusConnectApp() {
                 },
                 onSearchClick = {
                     // TODO: Add search functionality
-                }
+                },
+                refreshTrigger = messagesRefreshTrigger
             )
         }
 

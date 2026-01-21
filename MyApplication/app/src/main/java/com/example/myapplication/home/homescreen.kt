@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.PostDto
+import com.example.myapplication.data.remote.EventDto
 import com.example.myapplication.data.remote.StoryDto
 import com.example.myapplication.data.remote.StoryReplyDto
 import com.example.myapplication.data.remote.apiService
@@ -70,6 +71,28 @@ data class BottomNavItem(
     val label: String
 )
 
+// Event data class for feed display
+data class CampusEvent(
+    val id: String,
+    val title: String,
+    val location: String,
+    val date: String,
+    val time: String,
+    val description: String,
+    val latitude: Double,
+    val longitude: Double,
+    val isInterested: Boolean = false,
+    val isGoing: Boolean = false,
+    val interestedCount: Int = 0,
+    val goingCount: Int = 0
+)
+
+// Sealed class for feed items
+sealed class FeedItem {
+    data class PostItem(val post: Post) : FeedItem()
+    data class EventItem(val event: CampusEvent) : FeedItem()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -80,11 +103,12 @@ fun HomeScreen(
     onNavigateToCreatePost: () -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToPostDetail: (String) -> Unit = {}
+    onNavigateToPostDetail: (String) -> Unit = {},
+    onNavigateToCreateStory: () -> Unit = {}
 ) {
 
     var stories by remember { mutableStateOf<List<Story>>(emptyList()) }
-    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
+    var feedItems by remember { mutableStateOf<List<FeedItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
@@ -122,21 +146,62 @@ fun HomeScreen(
             errorMessage = null
             try {
                 val remotePosts: List<PostDto> = apiService.getFeed()
-                posts = remotePosts.map { dto ->
-                    Post(
-                        id = dto.id,
-                        userName = dto.author.full_name,
-                        profileImage = dto.author.profile?.avatar_url ?: "",
-                        timeAgo = dto.created_at,
-                        content = dto.content,
-                        postImage = dto.image_url,
-                        likes = dto.like_count,
-                        comments = dto.comment_count,
-                        isLiked = dto.is_liked,
-                        isBookmarked = false,
-                        isAuthor = dto.is_author
+                val remoteEvents: List<EventDto> = apiService.getEvents()
+
+                // Combine posts and events into a single feed
+                val combinedFeed = mutableListOf<FeedItem>()
+
+                // Add posts
+                remotePosts.forEach { dto ->
+                    combinedFeed.add(
+                        FeedItem.PostItem(
+                            Post(
+                                id = dto.id,
+                                userName = dto.author.full_name,
+                                profileImage = dto.author.profile?.avatar_url ?: "",
+                                timeAgo = dto.created_at,
+                                content = dto.content,
+                                postImage = dto.image_url,
+                                likes = dto.like_count,
+                                comments = dto.comment_count,
+                                isLiked = dto.is_liked,
+                                isBookmarked = false,
+                                isAuthor = dto.is_author
+                            )
+                        )
                     )
                 }
+
+                // Add events
+                remoteEvents.forEach { dto ->
+                    combinedFeed.add(
+                        FeedItem.EventItem(
+                            CampusEvent(
+                                id = dto.id.toString(),
+                                title = dto.title,
+                                location = dto.location,
+                                date = dto.start_date,
+                                time = dto.start_date, // Could parse time separately
+                                description = dto.description,
+                                latitude = dto.latitude.toDoubleOrNull() ?: 0.0,
+                                longitude = dto.longitude.toDoubleOrNull() ?: 0.0,
+                                isInterested = dto.is_interested,
+                                isGoing = dto.is_going,
+                                interestedCount = dto.interested_count,
+                                goingCount = dto.going_count
+                            )
+                        )
+                    )
+                }
+
+                // Sort by creation time (newest first)
+                feedItems = combinedFeed.sortedByDescending { item ->
+                    when (item) {
+                        is FeedItem.PostItem -> item.post.timeAgo
+                        is FeedItem.EventItem -> item.event.date
+                    }
+                }
+
             } catch (e: Exception) {
                 errorMessage = "Failed to load feed: ${e.message ?: "Unknown error"}"
             } finally {
@@ -179,7 +244,7 @@ fun HomeScreen(
                 )
             }
 
-            if (isLoading && posts.isEmpty()) {
+            if (isLoading && feedItems.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -198,15 +263,27 @@ fun HomeScreen(
                     }
 
                     item {
-                        StoriesSection(stories = stories)
+                        StoriesSection(stories = stories, onAddStoryClick = onNavigateToCreateStory)
                     }
 
-                    items(posts) { post ->
-                        PostItem(
-                            post = post,
-                            onPostClick = { onNavigateToPostDetail(post.id.toString()) },
-                            onRefresh = { loadFeed() }
-                        )
+                    items(feedItems) { feedItem ->
+                        when (feedItem) {
+                            is FeedItem.PostItem -> {
+                                PostItem(
+                                    post = feedItem.post,
+                                    onPostClick = { onNavigateToPostDetail(feedItem.post.id.toString()) },
+                                    onRefresh = { loadFeed() }
+                                )
+                            }
+                            is FeedItem.EventItem -> {
+                                EventItem(
+                                    event = feedItem.event,
+                                    onEventClick = { /* Navigate to event detail */ },
+                                    onInterestedClick = { /* Handle interested */ },
+                                    onGoingClick = { /* Handle going */ }
+                                )
+                            }
+                        }
                         Divider(
                             color = Color.Gray.copy(alpha = 0.2f),
                             thickness = 8.dp
@@ -364,7 +441,10 @@ fun PostCreationActionButton(
 }
 
 @Composable
-fun StoriesSection(stories: List<Story>) {
+fun StoriesSection(
+    stories: List<Story>,
+    onAddStoryClick: () -> Unit = {}
+) {
     // Only show section if there are stories (should always have at least "Share Story")
     if (stories.isNotEmpty()) {
         LazyRow(
@@ -372,14 +452,17 @@ fun StoriesSection(stories: List<Story>) {
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
         ) {
             items(stories) { story ->
-                StoryItem(story = story)
+                StoryItem(story = story, onAddStoryClick = onAddStoryClick)
             }
         }
     }
 }
 
 @Composable
-fun StoryItem(story: Story) {
+fun StoryItem(
+    story: Story,
+    onAddStoryClick: () -> Unit = {}
+) {
     var isLiked by remember { mutableStateOf(story.isLiked) }
     var likeCount by remember { mutableIntStateOf(story.likeCount) }
     var showStoryViewer by remember { mutableStateOf(false) }
@@ -399,8 +482,10 @@ fun StoryItem(story: Story) {
                     if (story.isAddStory) Color(0xFF42A5F5)
                     else Color.Gray.copy(alpha = 0.3f)
                 )
-                .clickable(onClick = { 
-                    if (!story.isAddStory) {
+                .clickable(onClick = {
+                    if (story.isAddStory) {
+                        onAddStoryClick()
+                    } else {
                         showStoryViewer = true
                         // Load replies when story is opened
                         scope.launch {
@@ -1007,6 +1092,140 @@ fun PostItem(
                 }
             }
         }
+        }
+    }
+}
+
+@Composable
+fun EventItem(
+    event: CampusEvent,
+    onEventClick: () -> Unit,
+    onInterestedClick: () -> Unit,
+    onGoingClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onEventClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Event header with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Event,
+                    contentDescription = "Event",
+                    tint = Color(0xFF007AFF),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Event",
+                    fontSize = 14.sp,
+                    color = Color(0xFF007AFF),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Event title
+            Text(
+                text = event.title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Event location
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Location",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = event.location,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Event date and time
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = "Date & Time",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "${event.date} • ${event.time}",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Event description
+            Text(
+                text = event.description,
+                fontSize = 14.sp,
+                color = Color.Black,
+                maxLines = 2
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onInterestedClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (event.isInterested) Color(0xFF4CAF50) else Color(0xFF007AFF)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Interested",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Interested (${event.interestedCount})", fontSize = 12.sp)
+                }
+
+                OutlinedButton(
+                    onClick = onGoingClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (event.isGoing) Color(0xFF4CAF50) else Color(0xFF007AFF)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Going",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Going (${event.goingCount})", fontSize = 12.sp)
+                }
+            }
         }
     }
 }

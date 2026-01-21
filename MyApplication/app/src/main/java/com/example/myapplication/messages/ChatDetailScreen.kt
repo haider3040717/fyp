@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.MessageDto
+import com.example.myapplication.data.remote.MessageRequest
 import com.example.myapplication.data.remote.SessionManager
 import com.example.myapplication.data.remote.apiService
 import kotlinx.coroutines.launch
@@ -231,7 +232,7 @@ fun ChatDetailScreen(
                                     try {
                                         val created = apiService.sendMessage(
                                             convId,
-                                            mapOf("text" to textToSend)
+                                            MessageRequest(text = textToSend)
                                         )
                                         val currentUserId = SessionManager.currentUserId
                                         val newMessage = Message(

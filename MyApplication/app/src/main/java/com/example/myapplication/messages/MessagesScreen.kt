@@ -41,7 +41,8 @@ data class ChatMessage(
 fun MessagesScreen(
     onNavigateBack: () -> Unit = {},
     onChatClick: (String, String, Boolean) -> Unit = { _, _, _ -> },
-    onSearchClick: () -> Unit = {}
+    onSearchClick: () -> Unit = {},
+    refreshTrigger: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
@@ -79,7 +80,7 @@ fun MessagesScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit, refreshTrigger) {
         loadConversations()
     }
 

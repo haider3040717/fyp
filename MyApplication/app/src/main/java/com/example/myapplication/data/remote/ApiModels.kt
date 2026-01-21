@@ -152,6 +152,20 @@ data class NotificationDto(
 
 // --- Events ---
 
+data class EventRequest(
+    val title: String,
+    val description: String,
+    val location: String,
+    val latitude: Double,
+    val longitude: Double,
+    val start_date: String,
+    val end_date: String
+)
+
+data class MessageRequest(
+    val text: String
+)
+
 data class EventDto(
     val id: Int,
     val title: String,

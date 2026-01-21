@@ -40,6 +40,7 @@ fun ProfileScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToPostDetail: (String) -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
     userId: Int? = null, // Optional: for viewing other users' profiles
     externalRefreshTrigger: Int = 0
 ) {
@@ -196,7 +197,7 @@ fun ProfileScreen(
                     }
 
                     item {
-                        ProfileStats(userData!!)
+                        ProfileStats(userData!!, onFriendsClick = onNavigateToFriends)
                     }
 
                     if (isOwnProfile) {
@@ -336,7 +337,10 @@ fun ProfileHeader(userData: UserProfile) {
 }
 
 @Composable
-fun ProfileStats(userData: UserProfile) {
+fun ProfileStats(
+    userData: UserProfile,
+    onFriendsClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -350,15 +354,16 @@ fun ProfileStats(userData: UserProfile) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatItem("Posts", userData.posts.toString())
-            StatItem("Friends", userData.friends.toString())
+            StatItem("Friends", userData.friends.toString(), onClick = onFriendsClick)
         }
     }
 }
 
 @Composable
-fun StatItem(label: String, value: String) {
+fun StatItem(label: String, value: String, onClick: (() -> Unit)? = null) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     ) {
         Text(
             text = value,
