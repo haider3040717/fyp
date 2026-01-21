@@ -48,7 +48,7 @@ interface ApiService {
     suspend fun getUserPosts(@Query("user_id") userId: Int): List<PostDto>
 
     @POST("api/posts/posts/")
-    suspend fun createPost(@Body body: Map<String, Any>): PostDto
+    suspend fun createPost(@Body body: PostRequest): PostDto
 
     @GET("api/posts/posts/{id}/")
     suspend fun getPost(@Path("id") id: Int): PostDto
@@ -74,7 +74,7 @@ interface ApiService {
     suspend fun getComments(@Query("post") postId: Int): List<CommentDto>
 
     @POST("api/posts/comments/")
-    suspend fun createComment(@Body body: Map<String, Any>): CommentDto
+    suspend fun createComment(@Body body: CommentRequest): CommentDto
 
     @POST("api/posts/comments/{id}/like/")
     suspend fun likeComment(@Path("id") id: Int): Map<String, String>
@@ -148,7 +148,7 @@ interface ApiService {
     suspend fun getStoryReplies(@Query("story") storyId: Int): List<StoryReplyDto>
 
     @POST("api/posts/story-replies/")
-    suspend fun createStoryReply(@Body body: Map<String, Any>): StoryReplyDto
+    suspend fun createStoryReply(@Body body: StoryReplyRequest): StoryReplyDto
 
     @retrofit2.http.DELETE("api/posts/story-replies/{id}/")
     suspend fun deleteStoryReply(@Path("id") id: Int): Map<String, String>

@@ -37,7 +37,8 @@ data class FriendRequest(
 @Composable
 fun FriendsScreen(
     onNavigateBack: () -> Unit = {},
-    onNavigateToProfile: (String) -> Unit = {}
+    onNavigateToProfile: (String) -> Unit = {},
+    onFriendAdded: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var friendRequests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
@@ -45,6 +46,7 @@ fun FriendsScreen(
     var suggestions by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun loadFriendRequests() {
@@ -138,6 +140,38 @@ fun FriendsScreen(
                 )
             }
 
+            // Success message
+            if (successMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                ) {
+                    Text(
+                        text = successMessage ?: "",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            // Error message
+            if (errorMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f))
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             // Content based on selected tab
             when (selectedTab) {
                 0 -> {
@@ -155,9 +189,23 @@ fun FriendsScreen(
                                 scope.launch {
                                     try {
                                         apiService.followUser(requestId.toInt())
+                                        // Update the request state to show accepted
+                                        friendRequests = friendRequests.map { request ->
+                                            if (request.id == requestId) request.copy(isAccepted = true)
+                                            else request
+                                        }
                                         loadFriendRequests() // Reload to update list
+                                        onFriendAdded() // Trigger profile refresh
+                                        successMessage = "Friend request accepted!"
+                                        android.util.Log.d("FriendsScreen", "Friend request accepted for user $requestId")
+                                        // Clear success message after 2 seconds
+                                        kotlinx.coroutines.delay(2000)
+                                        successMessage = null
                                     } catch (e: Exception) {
-                                        // Handle error
+                                        errorMessage = "Failed to accept friend request: ${e.message ?: "Unknown error"}"
+                                        // Clear error message after 3 seconds
+                                        kotlinx.coroutines.delay(3000)
+                                        errorMessage = null
                                     }
                                 }
                             },
@@ -189,14 +237,31 @@ fun FriendsScreen(
                                 scope.launch {
                                     try {
                                         apiService.followUser(requestId.toInt())
-                                        loadSuggestions() // Reload to update list
+                                        // Update the suggestion state to show accepted
+                                        suggestions = suggestions.map { suggestion ->
+                                            if (suggestion.id == requestId) suggestion.copy(isAccepted = true)
+                                            else suggestion
+                                        }
+                                        onFriendAdded() // Trigger profile refresh
+                                        successMessage = "Friend added successfully!"
+                                        android.util.Log.d("FriendsScreen", "Friend added for user $requestId")
+                                        // Clear success message after 2 seconds
+                                        kotlinx.coroutines.delay(2000)
+                                        successMessage = null
                                     } catch (e: Exception) {
-                                        // Handle error
+                                        errorMessage = "Failed to add friend: ${e.message ?: "Unknown error"}"
+                                        // Clear error message after 3 seconds
+                                        kotlinx.coroutines.delay(3000)
+                                        errorMessage = null
                                     }
                                 }
                             },
                             onReject = { requestId ->
-                                suggestions = suggestions.filter { it.id != requestId }
+                                // Update the suggestion state to show rejected
+                                suggestions = suggestions.map { suggestion ->
+                                    if (suggestion.id == requestId) suggestion.copy(isRejected = true)
+                                    else suggestion
+                                }
                             },
                             onProfileClick = onNavigateToProfile
                         )

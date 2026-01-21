@@ -24,6 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.NotificationDto
 import com.example.myapplication.data.remote.apiService
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.util.*
 
 // Data class for notifications
 data class Notification(
@@ -81,7 +84,14 @@ fun NotificationsScreen(
                             ?.mapNotNull { it.firstOrNull()?.toString() }?.joinToString("") ?: "CC",
                         action = n.text,
                         content = null,
-                        timestamp = n.created_at,
+                        timestamp = try {
+                            val instant = Instant.parse(n.created_at)
+                            val date = Date.from(instant)
+                            SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(date)
+                        } catch (e: Exception) {
+                            // Fallback to current date if parsing fails
+                            SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date())
+                        },
                         isRead = n.is_read,
                         relatedObjectId = n.related_object_id,
                         icon = when (n.type) {

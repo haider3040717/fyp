@@ -40,7 +40,8 @@ fun ProfileScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToPostDetail: (String) -> Unit = {},
-    userId: Int? = null // Optional: for viewing other users' profiles
+    userId: Int? = null, // Optional: for viewing other users' profiles
+    externalRefreshTrigger: Int = 0
 ) {
     var currentUserId by remember { mutableIntStateOf(0) }
     val isOwnProfile = userId == null || userId == currentUserId
@@ -58,7 +59,7 @@ fun ProfileScreen(
     var userPosts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var localRefreshTrigger by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -73,8 +74,11 @@ fun ProfileScreen(
                     apiService.me()
                 }
                 val profile = apiService.profile()
+
+                android.util.Log.d("ProfileScreen", "Loaded user: ${user.full_name}, friends: ${user.friends_count}")
+                android.util.Log.d("ProfileScreen", "Loaded profile bio: ${profile.bio}")
                 
-                userData = UserProfile(
+                val userProfile = UserProfile(
                     id = user.id,
                     name = user.full_name,
                     seatNo = user.seat_number,
@@ -86,6 +90,9 @@ fun ProfileScreen(
                     posts = user.posts_count,
                     profileImage = profile.avatar_url ?: ""
                 )
+
+                android.util.Log.d("ProfileScreen", "Created UserProfile with friends count: ${userProfile.friends}")
+                userData = userProfile
 
                 // Load user's posts
                 val targetUserId = userId ?: currentUserId
@@ -123,7 +130,8 @@ fun ProfileScreen(
         }
     }
 
-    LaunchedEffect(userId, refreshTrigger) {
+    LaunchedEffect(userId, localRefreshTrigger, externalRefreshTrigger) {
+        android.util.Log.d("ProfileScreen", "Loading profile - userId: $userId, isOwnProfile: $isOwnProfile, localTrigger: $localRefreshTrigger, externalTrigger: $externalRefreshTrigger")
         loadProfile()
     }
 
@@ -138,6 +146,12 @@ fun ProfileScreen(
                 },
                 actions = {
                     if (isOwnProfile) {
+                        IconButton(onClick = {
+                            // Manual refresh for testing
+                            localRefreshTrigger++
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
@@ -229,7 +243,7 @@ fun ProfileScreen(
                             PostItem(
                                 post = post,
                                 onPostClick = { onNavigateToPostDetail(post.id.toString()) },
-                                onRefresh = { refreshTrigger++ }
+                                onRefresh = { localRefreshTrigger++ }
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),

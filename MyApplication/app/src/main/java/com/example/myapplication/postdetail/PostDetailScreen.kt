@@ -27,6 +27,7 @@ import com.example.myapplication.data.remote.PostDto
 import com.example.myapplication.data.remote.apiService
 import com.example.myapplication.data.remote.SessionManager
 import com.example.myapplication.data.remote.ShareResponse
+import com.example.myapplication.data.remote.CommentRequest
 import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -356,12 +357,11 @@ fun PostDetailScreen(
                             if (commentText.isNotBlank() && parsedId != 0) {
                                 scope.launch {
                                     try {
-                                        val created = apiService.createComment(
-                                            mapOf(
-                                                "post" to parsedId,
-                                                "content" to commentText
-                                            )
+                                        val commentRequest = CommentRequest(
+                                            post = parsedId,
+                                            content = commentText
                                         )
+                                        val created = apiService.createComment(commentRequest)
                                         comments = comments + Comment(
                                             id = created.id,
                                             userName = created.author.full_name,

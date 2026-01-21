@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.remote.apiService
 import com.example.myapplication.data.remote.SessionManager
 import com.example.myapplication.data.remote.UserDto
+import com.example.myapplication.data.remote.PostRequest
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 
@@ -63,9 +64,11 @@ fun CreatePostScreen(
                         errorMessage = null
                         scope.launch {
                             try {
-                                val postData: MutableMap<String, Any> = mutableMapOf("content" to postText)
-                                selectedImageUrl?.takeIf { it.isNotBlank() }?.let { postData["image_url"] = it }
-                                apiService.createPost(postData)
+                                val postRequest = PostRequest(
+                                    content = postText,
+                                    image_url = selectedImageUrl?.takeIf { it.isNotBlank() }
+                                )
+                                apiService.createPost(postRequest)
                                 isPosting = false
                                 onPostCreated()
                             } catch (e: Exception) {

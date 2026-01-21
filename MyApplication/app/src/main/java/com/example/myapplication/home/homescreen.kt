@@ -28,6 +28,8 @@ import com.example.myapplication.data.remote.StoryReplyDto
 import com.example.myapplication.data.remote.apiService
 import com.example.myapplication.data.remote.SessionManager
 import com.example.myapplication.data.remote.ShareResponse
+import com.example.myapplication.data.remote.CommentRequest
+import com.example.myapplication.data.remote.StoryReplyRequest
 import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -587,12 +589,11 @@ fun StoryItem(story: Story) {
                             if (replyText.isNotBlank()) {
                                 scope.launch {
                                     try {
-                                        val created = apiService.createStoryReply(
-                                            mapOf(
-                                                "story" to (story.id.toIntOrNull() ?: 0),
-                                                "content" to replyText
-                                            )
+                                        val storyReplyRequest = StoryReplyRequest(
+                                            story = story.id.toIntOrNull() ?: 0,
+                                            content = replyText
                                         )
+                                        val created = apiService.createStoryReply(storyReplyRequest)
                                         storyReplies = storyReplies + created
                                         replyText = ""
                                     } catch (e: Exception) {
@@ -963,11 +964,11 @@ fun PostItem(
                                             isSubmittingComment = true
                                             scope.launch {
                                                 try {
-                                                val commentData: Map<String, Any> = mapOf(
-                                                    "post" to post.id,
-                                                    "content" to commentText.trim()
-                                                )
-                                                val created = apiService.createComment(commentData)
+                                                    val commentRequest = CommentRequest(
+                                                        post = post.id,
+                                                        content = commentText.trim()
+                                                    )
+                                                    val created = apiService.createComment(commentRequest)
                                                     // Success - clear input and update comment count
                                                     commentText = ""
                                                     commentCount += 1

@@ -41,6 +41,21 @@ data class RegisterRequest(
     val university_email: String?
 )
 
+data class CommentRequest(
+    val post: Int,
+    val content: String
+)
+
+data class PostRequest(
+    val content: String,
+    val image_url: String? = null
+)
+
+data class StoryReplyRequest(
+    val story: Int,
+    val content: String
+)
+
 data class ProfileDto(
     val bio: String? = null,
     val avatar_url: String? = null,

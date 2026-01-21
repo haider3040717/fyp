@@ -60,6 +60,7 @@ fun CampusConnectApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     var selectedBottomTab by remember { mutableIntStateOf(0) }
+    var profileRefreshTrigger by remember { mutableIntStateOf(0) }
 
     // Determine if current screen should show bottom navigation
     val showBottomNav = currentRoute in listOf("home", "profile", "search", "eventmap", "friends")
@@ -184,7 +185,8 @@ fun CampusConnectApp() {
                 },
                 onNavigateToPostDetail = { postId ->
                     navController.navigate("postdetail/$postId")
-                }
+                },
+                externalRefreshTrigger = profileRefreshTrigger
             )
         }
         composable("profile") {
@@ -200,7 +202,8 @@ fun CampusConnectApp() {
                 },
                 onNavigateToPostDetail = { postId ->
                     navController.navigate("postdetail/$postId")
-                }
+                },
+                externalRefreshTrigger = profileRefreshTrigger
             )
         }
 
@@ -249,6 +252,15 @@ fun CampusConnectApp() {
                 },
                 onNavigateToProfile = { userId ->
                     navController.navigate("profile/$userId")
+                },
+                onFriendAdded = {
+                    // Trigger profile refresh when friend is added
+                    profileRefreshTrigger++
+                    android.util.Log.d("MainActivity", "Profile refresh triggered, new trigger value: $profileRefreshTrigger")
+                    // Navigate to own profile to show updated friends count
+                    navController.navigate("profile") {
+                        popUpTo("profile") { inclusive = true }
+                    }
                 }
             )
         }
