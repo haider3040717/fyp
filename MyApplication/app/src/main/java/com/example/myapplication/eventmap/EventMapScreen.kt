@@ -1,6 +1,7 @@
 package com.example.myapplication.eventmap
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,6 +49,7 @@ fun EventMapScreen(
     var selectedEvent by remember { mutableStateOf<CampusEvent?>(null) }
     var campusEvents by remember { mutableStateOf<List<CampusEvent>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var showMapView by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -60,7 +62,7 @@ fun EventMapScreen(
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
                 val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
                 val displayDateFormat = SimpleDateFormat("d MMM", Locale.getDefault())
-                
+
                 val newEvents = remoteEvents.map { dto ->
                     try {
                         val startDate = dateFormat.parse(dto.start_date) ?: Date()
@@ -116,10 +118,18 @@ fun EventMapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Event Map") },
+                title = { Text(if (showMapView) "Event Map" else "Events") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showMapView = !showMapView }) {
+                        Icon(
+                            if (showMapView) Icons.Default.List else Icons.Default.Map,
+                            contentDescription = if (showMapView) "List View" else "Map View"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -133,71 +143,175 @@ fun EventMapScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Map Section (Placeholder with Event Markers Info)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Box(
+            if (showMapView) {
+                // Map View
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFE8F5E8)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(400.dp)
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    if (campusEvents.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFE8F5E8)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Mock University of Karachi Map
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Map",
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Campus Event Map",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
+                                text = "🏛️ University of Karachi",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
                                 color = Color(0xFF2E7D32)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "${campusEvents.size} event(s) on map",
-                                fontSize = 14.sp,
-                                color = Color.Gray
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Click events below to view details",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                                text = "Pakistan",
+                                fontSize = 14.sp,
+                                color = Color(0xFF4CAF50)
                             )
-                        }
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Map",
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(48.dp)
-                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Campus layout with event markers
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp)
+                                    .background(Color(0xFFE8F5E8), RoundedCornerShape(8.dp))
+                                    .border(2.dp, Color(0xFF4CAF50), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // Campus map layout
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.SpaceEvenly,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    // Top row - UBIT and Arts Department
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(70.dp)
+                                                .background(Color(0xFF1976D2), RoundedCornerShape(4.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("🏢", fontSize = 16.sp)
+                                                Text("UBIT", fontSize = 8.sp, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(70.dp)
+                                                .background(Color(0xFFFF9800), RoundedCornerShape(4.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("🎨", fontSize = 16.sp)
+                                                Text("Arts", fontSize = 8.sp, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            }
+                                        }
+                                    }
+
+                                    // Middle row - Commerce and Education
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(70.dp)
+                                                .background(Color(0xFF4CAF50), RoundedCornerShape(4.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("💼", fontSize = 16.sp)
+                                                Text("Commerce", fontSize = 7.sp, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(70.dp)
+                                                .background(Color(0xFF9C27B0), RoundedCornerShape(4.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("📚", fontSize = 16.sp)
+                                                Text("Education", fontSize = 7.sp, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            }
+                                        }
+                                    }
+
+                                    // Bottom row - IBA
+                                    Box(
+                                        modifier = Modifier
+                                            .size(70.dp)
+                                            .background(Color(0xFFF44336), RoundedCornerShape(4.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("🏦", fontSize = 16.sp)
+                                            Text("IBA", fontSize = 8.sp, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                        }
+                                    }
+                                }
+
+                                // Event markers overlaid on map
+                                if (campusEvents.isNotEmpty()) {
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        campusEvents.forEachIndexed { index, event ->
+                                            // Position markers near different buildings
+                                            val positions = listOf(
+                                                // UBIT (top left)
+                                                Triple(Alignment.TopStart, 20.dp, 40.dp),
+                                                // Arts Department (top right)
+                                                Triple(Alignment.TopEnd, (-20).dp, 40.dp),
+                                                // Commerce Department (middle left)
+                                                Triple(Alignment.CenterStart, 20.dp, 0.dp),
+                                                // Education Department (middle right)
+                                                Triple(Alignment.CenterEnd, (-20).dp, 0.dp),
+                                                // IBA (bottom center)
+                                                Triple(Alignment.BottomCenter, 0.dp, (-20).dp)
+                                            )
+                                            val pos = positions.getOrNull(index % positions.size)
+                                            if (pos != null) {
+                                                val (alignment, offsetX, offsetY) = pos
+                                                Box(
+                                                    modifier = Modifier
+                                                        .align(alignment)
+                                                        .offset(x = offsetX, y = offsetY)
+                                                        .size(28.dp)
+                                                        .background(Color.Red, CircleShape)
+                                                        .clickable { selectedEvent = event },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = "📍",
+                                                        fontSize = 14.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Campus Event Map",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF2E7D32)
-                            )
-                            Text(
-                                text = "No events available",
-                                fontSize = 14.sp,
+                                text = "${campusEvents.size} event${if (campusEvents.size != 1) "s" else ""} marked on campus",
+                                fontSize = 12.sp,
                                 color = Color.Gray
                             )
                         }
@@ -205,446 +319,115 @@ fun EventMapScreen(
                 }
             }
 
-            // Events List
-            Text(
-                text = "Upcoming Events",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            // Events List (shown in both map and list view)
+            if (!showMapView || true) { // Always show list, or only in list view
+                Text(
+                    text = if (showMapView) "Event Details" else "Upcoming Events",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
 
-            when {
-                isLoading -> {
+                if (isLoading) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
                     }
-                }
-                errorMessage != null -> {
+                } else if (errorMessage != null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = errorMessage ?: "Error loading events",
-                                color = Color.Red,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                            Button(onClick = { loadEvents() }) {
-                                Text("Retry")
+                        Text(
+                            text = errorMessage ?: "Error",
+                            color = Color.Red
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(campusEvents) { event ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedEvent = event },
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = event.title,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "${event.location} • ${event.date}",
+                                        fontSize = 14.sp,
+                                        color = Color.Gray
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = event.description,
+                                        fontSize = 14.sp,
+                                        color = Color.Black,
+                                        maxLines = 2
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                else -> {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(all = 16.dp)
-                    ) {
-                        items(campusEvents) { event ->
-                            EventCard(
-                                event = event,
-                                onEventClick = { selectedEvent = event },
-                                onInterestClick = {
-                                    scope.launch {
-                                        try {
-                                            if (event.isInterested) {
-                                                apiService.markEventUninterested(event.id.toInt())
-                                            } else {
-                                                apiService.markEventInterested(event.id.toInt())
-                                            }
-                                            // Update local state immediately for better UX
-                                            campusEvents = campusEvents.map { e ->
-                                                if (e.id == event.id) {
-                                                    e.copy(
-                                                        isInterested = !e.isInterested,
-                                                        interestedCount = if (e.isInterested) e.interestedCount - 1 else e.interestedCount + 1
-                                                    )
-                                                } else e
-                                            }
-                                            loadEvents() // Reload to sync with backend
-                                        } catch (e: Exception) {
-                                            // Handle error - revert on failure
-                                            loadEvents()
-                                        }
-                                    }
-                                },
-                                onGoingClick = {
-                                    scope.launch {
-                                        try {
-                                            val wasGoing = event.isGoing
-                                            apiService.markEventGoing(event.id.toInt())
-                                            // Update local state immediately
-                                            campusEvents = campusEvents.map { e ->
-                                                if (e.id == event.id) {
-                                                    e.copy(
-                                                        isGoing = !wasGoing,
-                                                        goingCount = if (wasGoing) e.goingCount - 1 else e.goingCount + 1
-                                                    )
-                                                } else e
-                                            }
-                                            loadEvents() // Reload to sync with backend
-                                        } catch (e: Exception) {
-                                            // Handle error - revert on failure
-                                            loadEvents()
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
             }
         }
     }
 
-    // Event Detail Bottom Sheet
-    selectedEvent?.let { event ->
-        EventDetailBottomSheet(
-            event = event,
-            onDismiss = { selectedEvent = null },
-            onInterestClick = {
-                scope.launch {
-                    try {
-                        val wasInterested = event.isInterested
-                        if (wasInterested) {
-                            apiService.markEventUninterested(event.id.toInt())
-                        } else {
-                            apiService.markEventInterested(event.id.toInt())
-                        }
-                        // Update local state immediately for better UX
-                        val updatedEvents = campusEvents.map { e ->
-                            if (e.id == event.id) {
-                                e.copy(
-                                    isInterested = !wasInterested,
-                                    interestedCount = if (wasInterested) e.interestedCount - 1 else e.interestedCount + 1
-                                )
-                            } else e
-                        }
-                        campusEvents = updatedEvents
-                        selectedEvent = updatedEvents.find { it.id == event.id }
-                        // Reload to sync with backend (this will update selectedEvent again)
-                        loadEvents()
-                    } catch (e: Exception) {
-                        // Handle error
-                        loadEvents()
-                    }
+    // Event Details Modal
+    if (selectedEvent != null) {
+        AlertDialog(
+            onDismissRequest = { selectedEvent = null },
+            title = { Text(selectedEvent?.title ?: "") },
+            text = {
+                Column {
+                    Text("Location: ${selectedEvent?.location}")
+                    Text("Date: ${selectedEvent?.date}")
+                    Text("Time: ${selectedEvent?.time}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(selectedEvent?.description ?: "")
                 }
             },
-            onGoingClick = {
-                scope.launch {
-                    try {
-                        val wasGoing = event.isGoing
-                        apiService.markEventGoing(event.id.toInt())
-                        // Update local state immediately for better UX
-                        val updatedEvents = campusEvents.map { e ->
-                            if (e.id == event.id) {
-                                e.copy(
-                                    isGoing = !wasGoing,
-                                    goingCount = if (wasGoing) e.goingCount - 1 else e.goingCount + 1
-                                )
-                            } else e
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        // Delete event
+                        scope.launch {
+                            try {
+                                selectedEvent?.let { event ->
+                                    apiService.deleteEvent(event.id.toInt())
+                                    // Remove from list and close modal
+                                    campusEvents = campusEvents.filter { it.id != event.id }
+                                    selectedEvent = null
+                                }
+                            } catch (e: Exception) {
+                                // Handle error - could show a snackbar
+                            }
                         }
-                        campusEvents = updatedEvents
-                        selectedEvent = updatedEvents.find { it.id == event.id }
-                        // Reload to sync with backend (this will update selectedEvent again)
-                        loadEvents()
-                    } catch (e: Exception) {
-                        // Handle error
-                        loadEvents()
                     }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedEvent = null }) {
+                    Text("Close")
                 }
             }
         )
-    }
-}
-
-@Composable
-fun EventCard(
-    event: CampusEvent,
-    onEventClick: () -> Unit,
-    onInterestClick: () -> Unit,
-    onGoingClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onEventClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.Top
-            ) {
-                // Event Icon
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF007AFF)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Event,
-                        contentDescription = "Event",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = event.title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Location",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = event.location,
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Date",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${event.date} • ${event.time}",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = event.description,
-                fontSize = 14.sp,
-                color = Color.Black,
-                maxLines = 2
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action Buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = onInterestClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (event.isInterested) Color(0xFF007AFF) else Color(0xFFE5E5EA),
-                        contentColor = if (event.isInterested) Color.White else Color.Black
-                    )
-                ) {
-                    Text("Interested (${event.interestedCount})")
-                }
-
-                Button(
-                    onClick = onGoingClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (event.isGoing) Color(0xFF4CAF50) else Color(0xFFE5E5EA),
-                        contentColor = if (event.isGoing) Color.White else Color.Black
-                    )
-                ) {
-                    Text("Going (${event.goingCount})")
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EventDetailBottomSheet(
-    event: CampusEvent,
-    onDismiss: () -> Unit,
-    onInterestClick: () -> Unit,
-    onGoingClick: () -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Map placeholder for specific event
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFE3F2FD)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Location",
-                            tint = Color(0xFF007AFF),
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = event.title,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF007AFF)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Event Details
-            Text(
-                text = event.title,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Location",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = event.location,
-                    fontSize = 16.sp,
-                    color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = "Date",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = event.date,
-                    fontSize = 16.sp,
-                    color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = "Time",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = event.time,
-                    fontSize = 16.sp,
-                    color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = event.description,
-                fontSize = 14.sp,
-                color = Color.Black,
-                lineHeight = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Action Buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Button(
-                    onClick = onInterestClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (event.isInterested) Color(0xFF007AFF) else Color(0xFFE5E5EA),
-                        contentColor = if (event.isInterested) Color.White else Color.Black
-                    )
-                ) {
-                    Text("Interested (${event.interestedCount})")
-                }
-
-                Button(
-                    onClick = onGoingClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (event.isGoing) Color(0xFF4CAF50) else Color(0xFFE5E5EA),
-                        contentColor = if (event.isGoing) Color.White else Color.Black
-                    )
-                ) {
-                    Text("Going (${event.goingCount})")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
     }
 }

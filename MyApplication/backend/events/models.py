@@ -9,8 +9,8 @@ class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     location = models.CharField(max_length=255)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, default=24.8607)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, default=67.0011)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     created_by = models.ForeignKey(

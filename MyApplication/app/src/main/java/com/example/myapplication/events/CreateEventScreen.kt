@@ -33,8 +33,6 @@ fun CreateEventScreen(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf("") }
     var startTime by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
@@ -77,8 +75,6 @@ fun CreateEventScreen(
                     title = title.trim(),
                     description = description.trim(),
                     location = location.trim(),
-                    latitude = latitude.toDoubleOrNull() ?: 24.8607,
-                    longitude = longitude.toDoubleOrNull() ?: 67.0011,
                     start_date = startDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z",
                     end_date = endDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
                 )
@@ -90,14 +86,12 @@ fun CreateEventScreen(
                 title = ""
                 description = ""
                 location = ""
-                latitude = ""
-                longitude = ""
                 startDate = ""
                 startTime = ""
                 endDate = ""
                 endTime = ""
 
-                onEventCreated()
+                onEventCreated() 
 
             } catch (e: Exception) {
                 errorMessage = "Failed to create event: ${e.message ?: "Unknown error"}"
@@ -221,27 +215,6 @@ fun CreateEventScreen(
                 maxLines = 2
             )
 
-            // Coordinates (optional)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = latitude,
-                    onValueChange = { latitude = it },
-                    label = { Text("Latitude") },
-                    placeholder = { Text("24.8607") },
-                    modifier = Modifier.weight(1f)
-                )
-
-                OutlinedTextField(
-                    value = longitude,
-                    onValueChange = { longitude = it },
-                    label = { Text("Longitude") },
-                    placeholder = { Text("67.0011") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
 
             // Start Date & Time
             Text(

@@ -121,6 +121,9 @@ interface ApiService {
     @POST("api/events/events/")
     suspend fun createEvent(@Body body: EventRequest): EventDto
 
+    @retrofit2.http.DELETE("api/events/events/{id}/")
+    suspend fun deleteEvent(@Path("id") id: Int): Map<String, String>
+
     @POST("api/events/events/{id}/interested/")
     suspend fun markEventInterested(@Path("id") id: Int): Map<String, String>
 
@@ -160,6 +163,9 @@ interface ApiService {
 
     @GET("api/accounts/friend-suggestions/")
     suspend fun getFriendSuggestions(): List<UserDto>
+
+    @GET("api/accounts/friends/")
+    suspend fun getFriends(): List<UserDto>
 
     @POST("api/accounts/follow/{id}/")
     suspend fun followUser(@Path("id") id: Int): Map<String, String>

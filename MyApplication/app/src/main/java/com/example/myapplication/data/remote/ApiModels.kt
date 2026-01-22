@@ -21,7 +21,7 @@ fun getBaseUrl(): String {
     } else {
         // For physical device, use your PC's LAN IP (same network as device)
         // Backend must be running on 0.0.0.0:8000 (not 127.0.0.1:8000) to accept connections
-        "http://192.168.1.102:8000/"
+        "http://10.210.36.157:8000/"
     }
 }
 
@@ -156,8 +156,6 @@ data class EventRequest(
     val title: String,
     val description: String,
     val location: String,
-    val latitude: Double,
-    val longitude: Double,
     val start_date: String,
     val end_date: String
 )

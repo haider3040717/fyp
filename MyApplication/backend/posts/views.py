@@ -47,6 +47,13 @@ class PostViewSet(viewsets.ModelViewSet):
         else:
             serializer.save(author=self.request.user)
 
+    def perform_destroy(self, instance):
+        # Only allow the post author to delete their posts
+        if instance.author != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete your own posts.")
+        instance.delete()
+
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):
         post = self.get_object()
@@ -136,6 +143,13 @@ class CommentViewSet(viewsets.ModelViewSet):
                 text=f"{self.request.user.full_name} commented on your post",
                 related_object_id=post.id
             )
+
+    def perform_destroy(self, instance):
+        # Only allow the comment author to delete their comments
+        if instance.author != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete your own comments.")
+        instance.delete()
 
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):

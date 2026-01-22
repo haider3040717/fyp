@@ -33,12 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.posts.count()
 
     def get_friends_count(self, obj):
-        # Friends = mutual follows (users who follow me and I follow back)
-        from .models import Follow
-        my_followers = Follow.objects.filter(following=obj).values_list("follower_id", flat=True)
-        my_following = Follow.objects.filter(follower=obj).values_list("following_id", flat=True)
-        mutual_ids = set(my_followers) & set(my_following)
-        return len(mutual_ids)
+        return obj.friends_count
 
 
 class RegisterSerializer(serializers.ModelSerializer):

@@ -34,6 +34,13 @@ class EventViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def perform_destroy(self, instance):
+        # Only allow the event creator to delete their events
+        if instance.created_by != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete your own events.")
+        instance.delete()
+
     @action(detail=True, methods=["post"])
     def interested(self, request, pk=None):
         event = self.get_object()

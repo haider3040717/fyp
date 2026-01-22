@@ -17,8 +17,6 @@ class EventSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "location",
-            "latitude",
-            "longitude",
             "start_date",
             "end_date",
             "created_by",
@@ -29,6 +27,8 @@ class EventSerializer(serializers.ModelSerializer):
             "is_interested",
             "is_going",
         ]
+        # Latitude/longitude are optional and defaulted in the model; not required from client
+        read_only_fields = ["latitude", "longitude"]
 
     def get_interested_count(self, obj):
         return obj.attendances.filter(status="interested").count()

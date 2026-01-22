@@ -43,6 +43,16 @@ class User(AbstractUser):
     year = models.PositiveIntegerField(blank=True, null=True)
     department = models.CharField(max_length=100, blank=True)
 
+    @property
+    def friends_count(self):
+        """Count of mutual follows (friends)."""
+        following_ids = self.following.values_list('following_id', flat=True)
+        mutual_follows = Follow.objects.filter(
+            follower__in=following_ids,
+            following=self
+        ).count()
+        return mutual_follows
+
     USERNAME_FIELD = "seat_number"
     REQUIRED_FIELDS = ["full_name"]
 

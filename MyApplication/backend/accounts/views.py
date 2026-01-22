@@ -186,6 +186,32 @@ class FriendSuggestionsView(APIView):
         return Response(serializer.data)
 
 
+class FriendsView(APIView):
+    """
+    Get list of friends (mutually followed users).
+    GET /api/accounts/friends/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Users that I follow AND who follow me back
+        following_ids = Follow.objects.filter(
+            follower=request.user
+        ).values_list("following_id", flat=True)
+
+        friends_ids = Follow.objects.filter(
+            follower__in=following_ids,
+            following=request.user
+        ).values_list("follower_id", flat=True)
+
+        friends = User.objects.filter(
+            id__in=friends_ids
+        ).select_related("profile")
+
+        serializer = UserSerializer(friends, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
 class SearchView(APIView):
     """
     Search users and posts.

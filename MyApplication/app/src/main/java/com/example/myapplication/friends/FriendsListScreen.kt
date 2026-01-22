@@ -48,11 +48,24 @@ fun FriendsListScreen(
             isLoading = true
             errorMessage = null
             try {
-                // TODO: Backend needs to provide an actual friends API endpoint
-                // For now, show a message that friends list is not available
-                // The friends count in profile comes from backend, but no API to get the list
-                friends = emptyList()
-                errorMessage = "Friends list feature coming soon. Backend needs to implement friends API."
+                // Get mutual friends (users that follow each other)
+                val friendUsers = apiService.getFriends()
+
+                friends = friendUsers.map { user ->
+                    Friend(
+                        id = user.id.toString(),
+                        name = user.full_name,
+                        seatNo = user.seat_number,
+                        department = user.department ?: "",
+                        profileImage = user.profile?.avatar_url ?: "",
+                        isOnline = false // TODO: Add online status when available
+                    )
+                }
+
+                // If no friends found, show a message
+                if (friends.isEmpty()) {
+                    errorMessage = "No friends yet. Follow users and get them to follow you back!"
+                }
             } catch (e: Exception) {
                 errorMessage = "Failed to load friends: ${e.message ?: "Unknown error"}"
                 friends = emptyList()
