@@ -1,8 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+# notifications/views.py
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
-from .models import Notification
-from .serializers import NotificationSerializer
+from .models import Notification, FCMDevice
+from .serializers import NotificationSerializer, FCMDeviceSerializer
 
 
 class NotificationListView(generics.ListAPIView):
@@ -47,4 +50,13 @@ class MarkAsReadView(generics.GenericAPIView):
 
 from django.shortcuts import render
 
-# Create your views here.
+class RegisterFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get("token")
+        FCMDevice.objects.get_or_create(
+            user=request.user,
+            token=token
+        )
+        return Response({"status": "Token registered"})

@@ -33,3 +33,14 @@ class Notification(models.Model):
 from django.db import models
 
 # Create your models here.
+# notifications/models.py
+from django.db import models
+from accounts.models import User
+
+class FCMDevice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.TextField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.token[:10]}"

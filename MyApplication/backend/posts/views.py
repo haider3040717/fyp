@@ -1,11 +1,18 @@
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+import firebase_admin
+from firebase_admin import credentials, messaging, auth
 from django.utils import timezone
 from datetime import timedelta
+from notifications.utils import send_push_notification
 
 from .models import Post, Comment, PostLike, CommentLike, Story, StoryLike, StoryReply
 from .serializers import PostSerializer, CommentSerializer, StorySerializer, StoryReplySerializer
+
+
+cred = credentials.Certificate("firebase_cred.json")
+firebase_admin.initialize_app(cred)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -68,6 +75,14 @@ class PostViewSet(viewsets.ModelViewSet):
                 text=f"{request.user.full_name} liked your post",
                 related_object_id=post.id
             )
+
+            send_push_notification(
+                user=request.user,
+                title="Test",
+                body="Testing body",
+                data=None
+            )
+
         return Response({"status": "liked"})
 
     @action(detail=True, methods=["post"])
